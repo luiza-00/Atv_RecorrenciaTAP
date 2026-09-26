@@ -4,44 +4,53 @@ import java.util.Scanner;
 
 public class Recorrencia {
 
-    static void expandir(int a, int num, int den, int k, int limite) {
-
-        if (k > limite) {
-            return;
+    static String recuo(int nivel) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < nivel; i++) {
+            sb.append("|   ");
         }
+        return sb.toString();
+    }
 
-        int quantidade = (int) Math.pow(a, k);
-        int novoNum = (int) Math.pow(num, k);
-        int novoDen = (int) Math.pow(den, k);
+    static long fatorial(int n, int nivel, StringBuilder sb) {
+        sb.append(recuo(nivel)).append("fatorial(").append(n).append(")\n");
+        if (n <= 1) {
+            sb.append(recuo(nivel)).append("-> caso base: retorna 1\n");
+            return 1;
+        }
+        long resultado = n * fatorial(n - 1, nivel + 1, sb);
+        sb.append(recuo(nivel)).append("-> ").append(n).append(" * fatorial(").append(n - 1).append(") = ").append(resultado).append("\n");
+        return resultado;
+    }
 
-        System.out.println("T(n) = " + quantidade + "T(" + novoNum + "n/" + novoDen + ") + " +k + "cn");
-
-        expandir(a, num, den, k + 1, limite);
+    static int lerInteiro(Scanner sc, String rotulo, int minimo) {
+        while (true) {
+            System.out.print(rotulo);
+            if (sc.hasNextInt()) {
+                int valor = sc.nextInt();
+                if (valor >= minimo) {
+                    return valor;
+                }
+                System.out.println("Valor invalido. Informe um numero >= " + minimo + ".");
+            } else {
+                System.out.println("Entrada invalida. Digite um numero inteiro.");
+                sc.next();
+            }
+        }
     }
 
     public static void main(String[] args) {
-
         Scanner sc = new Scanner(System.in);
-
-        System.out.print("qtd de subproblemas: ");
-        int a = sc.nextInt();
-
-        System.out.print("numerador (tam. problema): ");
-        int num = sc.nextInt();
-
-        System.out.print("denominador (tam. problema): ");
-        int den = sc.nextInt();
-
-        System.out.print("expansoes que deseja: ");
-        int limite = sc.nextInt();
-
+        System.out.println("===== FATORIAL RECURSIVO =====");
+        int n = lerInteiro(sc, "Informe n (>= 0): ", 0);
+        StringBuilder sb = new StringBuilder();
+        long r = fatorial(n, 0, sb);
         System.out.println();
-        System.out.println("T(n) = " + a + "T(" + num + "n/" + den + ") + cn");
+        System.out.println("Rastro das chamadas:");
+        System.out.print(sb);
         System.out.println();
-
-        expandir(a, num, den, 1, limite);
-
+        System.out.println("Resultado: " + n + "! = " + r);
         sc.close();
     }
-    
+
 }
