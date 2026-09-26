@@ -19,7 +19,7 @@ public class RecorrenciaGUI extends JFrame {
     private final JTextArea saida;
 
     public RecorrenciaGUI() {
-        super("Fatorial Recursivo");
+        super("Recorrencia T(n) = T(n-1) + n");
 
         campo = new JTextField();
 
@@ -40,7 +40,7 @@ public class RecorrenciaGUI extends JFrame {
         add(entradas, BorderLayout.NORTH);
         add(new JScrollPane(saida), BorderLayout.CENTER);
 
-        executar.addActionListener(e -> executarFatorial());
+        executar.addActionListener(e -> executar());
         limpar.addActionListener(e -> saida.setText(""));
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -56,12 +56,12 @@ public class RecorrenciaGUI extends JFrame {
         return valor;
     }
 
-    private void executarFatorial() {
+    private void executar() {
         StringBuilder sb = new StringBuilder();
         try {
             int n = lerInteiro(campo.getText(), 0);
-            long r = Recorrencia.fatorial(n, 0, sb);
-            saida.setText("Fatorial de " + n + "\n\nRastro das chamadas:\n" + sb + "\nResultado: " + n + "! = " + r + "\n");
+            long r = Recorrencia.t(n, 0, sb);
+            saida.setText("Recorrencia T(n) = T(n-1) + n\n\nRastro das chamadas:\n" + sb + "\nResultado: T(" + n + ") = " + r + "\n");
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(this, "Entrada invalida. Informe um numero inteiro >= 0.", "Erro", JOptionPane.ERROR_MESSAGE);
         }

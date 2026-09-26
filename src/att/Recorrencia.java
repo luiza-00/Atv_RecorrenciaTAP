@@ -12,14 +12,14 @@ public class Recorrencia {
         return sb.toString();
     }
 
-    static long fatorial(int n, int nivel, StringBuilder sb) {
-        sb.append(recuo(nivel)).append("fatorial(").append(n).append(")\n");
-        if (n <= 1) {
-            sb.append(recuo(nivel)).append("-> caso base: retorna 1\n");
-            return 1;
+    static long t(int n, int nivel, StringBuilder sb) {
+        sb.append(recuo(nivel)).append("T(").append(n).append(")\n");
+        if (n <= 0) {
+            sb.append(recuo(nivel)).append("-> caso base: T(0) = 0\n");
+            return 0;
         }
-        long resultado = n * fatorial(n - 1, nivel + 1, sb);
-        sb.append(recuo(nivel)).append("-> ").append(n).append(" * fatorial(").append(n - 1).append(") = ").append(resultado).append("\n");
+        long resultado = t(n - 1, nivel + 1, sb) + n;
+        sb.append(recuo(nivel)).append("-> T(").append(n - 1).append(") + ").append(n).append(" = ").append(resultado).append("\n");
         return resultado;
     }
 
@@ -41,15 +41,15 @@ public class Recorrencia {
 
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
-        System.out.println("===== FATORIAL RECURSIVO =====");
+        System.out.println("===== RECORRENCIA T(n) = T(n-1) + n =====");
         int n = lerInteiro(sc, "Informe n (>= 0): ", 0);
         StringBuilder sb = new StringBuilder();
-        long r = fatorial(n, 0, sb);
+        long r = t(n, 0, sb);
         System.out.println();
         System.out.println("Rastro das chamadas:");
         System.out.print(sb);
         System.out.println();
-        System.out.println("Resultado: " + n + "! = " + r);
+        System.out.println("Resultado: T(" + n + ") = " + r);
         sc.close();
     }
 
