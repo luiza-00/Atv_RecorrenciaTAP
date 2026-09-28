@@ -16,95 +16,123 @@ import javax.swing.SwingUtilities;
 
 public class RecorrenciaGUI extends JFrame {
 
-    private final JComboBox<String> forma;
-    private final JLabel rotuloBc;
-    private final JTextField campoA;
-    private final JTextField campoBc;
-    private final JTextField campoP;
-    private final JTextField campoQ;
-    private final JTextField campoBase;
-    private final JTextArea saida;
+    private static final int INDICE_FORMA_DIVISIVA = 1;
+
+    private final JComboBox<String> seletorForma;
+    private final JLabel rotuloFatorReducao;
+    private final JTextField campoQuantidadeChamadas;
+    private final JTextField campoFatorReducao;
+    private final JTextField campoCoeficienteN;
+    private final JTextField campoGrauN;
+    private final JTextField campoConstanteCusto;
+    private final JTextField campoTamanhoCasoBase;
+    private final JTextField campoValorCasoBase;
+    private final JTextField campoN;
+    private final JTextArea areaResultado;
 
     public RecorrenciaGUI() {
         super("Resolvedor de Relacoes de Recorrencia");
 
-        forma = new JComboBox<>(new String[] {
-            "Subtrativa: T(n) = a*T(n - c) + (p*n + q)",
-            "Divisiva:   T(n) = a*T(n / b) + (p*n + q)"
+        seletorForma = new JComboBox<>(new String[] {
+            "Subtrativa: T(n) = a*T(n - c) + (p*n^d + q)",
+            "Divisiva:   T(n) = a*T(n / b) + (p*n^d + q)"
         });
 
-        rotuloBc = new JLabel();
-        campoA = new JTextField();
-        campoBc = new JTextField();
-        campoP = new JTextField();
-        campoQ = new JTextField();
-        campoBase = new JTextField("1");
+        rotuloFatorReducao = new JLabel();
+        campoQuantidadeChamadas = new JTextField();
+        campoFatorReducao = new JTextField();
+        campoCoeficienteN = new JTextField();
+        campoGrauN = new JTextField("1");
+        campoConstanteCusto = new JTextField();
+        campoTamanhoCasoBase = new JTextField("1");
+        campoValorCasoBase = new JTextField("1");
+        campoN = new JTextField();
 
-        saida = new JTextArea(24, 60);
-        saida.setEditable(false);
-        saida.setFont(new Font("Monospaced", Font.PLAIN, 13));
+        areaResultado = new JTextArea(24, 60);
+        areaResultado.setEditable(false);
+        areaResultado.setFont(new Font("Monospaced", Font.PLAIN, 13));
 
-        JButton resolver = new JButton("Resolver");
-        JButton limpar = new JButton("Limpar");
+        JButton botaoResolver = new JButton("Resolver");
+        JButton botaoLimpar = new JButton("Limpar");
 
-        JPanel entradas = new JPanel(new GridLayout(7, 2, 8, 6));
-        entradas.add(new JLabel("Forma:"));
-        entradas.add(forma);
-        entradas.add(new JLabel("a (chamadas recursivas, >= 1):"));
-        entradas.add(campoA);
-        entradas.add(rotuloBc);
-        entradas.add(campoBc);
-        entradas.add(new JLabel("p (coef. de n no custo, >= 0):"));
-        entradas.add(campoP);
-        entradas.add(new JLabel("q (constante do custo, >= 0):"));
-        entradas.add(campoQ);
-        entradas.add(new JLabel("tamanho do caso base (ex.: 1):"));
-        entradas.add(campoBase);
-        entradas.add(resolver);
-        entradas.add(limpar);
+        JPanel painelEntradas = new JPanel(new GridLayout(10, 2, 8, 6));
+        painelEntradas.add(new JLabel("Forma:"));
+        painelEntradas.add(seletorForma);
+        painelEntradas.add(new JLabel("a (chamadas recursivas, >= 1):"));
+        painelEntradas.add(campoQuantidadeChamadas);
+        painelEntradas.add(rotuloFatorReducao);
+        painelEntradas.add(campoFatorReducao);
+        painelEntradas.add(new JLabel("p (numero na frente do n, >= 0):"));
+        painelEntradas.add(campoCoeficienteN);
+        painelEntradas.add(new JLabel("d (expoente do n, 1 a " + Recorrencia.GRAU_MAXIMO + "):"));
+        painelEntradas.add(campoGrauN);
+        painelEntradas.add(new JLabel("q (numero sozinho, >= 0):"));
+        painelEntradas.add(campoConstanteCusto);
+        painelEntradas.add(new JLabel("tamanho do caso base (ex.: 1):"));
+        painelEntradas.add(campoTamanhoCasoBase);
+        painelEntradas.add(new JLabel("valor de T no caso base (ex.: 1):"));
+        painelEntradas.add(campoValorCasoBase);
+        painelEntradas.add(new JLabel("n para calcular T(n) (1 a " + Recorrencia.N_MAXIMO + "):"));
+        painelEntradas.add(campoN);
+        painelEntradas.add(botaoResolver);
+        painelEntradas.add(botaoLimpar);
 
         setLayout(new BorderLayout(10, 10));
-        add(entradas, BorderLayout.NORTH);
-        add(new JScrollPane(saida), BorderLayout.CENTER);
+        add(painelEntradas, BorderLayout.NORTH);
+        add(new JScrollPane(areaResultado), BorderLayout.CENTER);
 
-        forma.addActionListener(e -> atualizarRotulo());
-        resolver.addActionListener(e -> executar());
-        limpar.addActionListener(e -> saida.setText(""));
+        seletorForma.addActionListener(evento -> atualizarRotuloFatorReducao());
+        botaoResolver.addActionListener(evento -> resolverEntradasInformadas());
+        botaoLimpar.addActionListener(evento -> areaResultado.setText(""));
 
-        atualizarRotulo();
+        atualizarRotuloFatorReducao();
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         pack();
         setLocationRelativeTo(null);
     }
 
-    private void atualizarRotulo() {
-        if (forma.getSelectedIndex() == 1) {
-            rotuloBc.setText("b (fator de divisao, >= 2):");
+    private boolean formaDivisivaSelecionada() {
+        return seletorForma.getSelectedIndex() == INDICE_FORMA_DIVISIVA;
+    }
+
+    private void atualizarRotuloFatorReducao() {
+        if (formaDivisivaSelecionada()) {
+            rotuloFatorReducao.setText("b (fator de divisao, >= 2):");
         } else {
-            rotuloBc.setText("c (reducao de n por chamada, >= 1):");
+            rotuloFatorReducao.setText("c (reducao de n por chamada, >= 1):");
         }
     }
 
-    private long lerLongo(String texto, long minimo) {
+    private long converterNumero(String texto, long minimo) {
+        return converterNumero(texto, minimo, Long.MAX_VALUE);
+    }
+
+    private long converterNumero(String texto, long minimo, long maximo) {
         long valor = Long.parseLong(texto.trim());
-        if (valor < minimo) {
-            throw new NumberFormatException("Valor menor que o minimo " + minimo);
+        if (valor < minimo || valor > maximo) {
+            throw new NumberFormatException("Valor fora do intervalo " + minimo + " a " + maximo);
         }
         return valor;
     }
 
-    private void executar() {
+    private void resolverEntradasInformadas() {
         try {
-            int f = (forma.getSelectedIndex() == 1) ? 2 : 1;
-            long a = lerLongo(campoA.getText(), 1);
-            long bc = lerLongo(campoBc.getText(), f == 2 ? 2 : 1);
-            long p = lerLongo(campoP.getText(), 0);
-            long q = lerLongo(campoQ.getText(), 0);
-            long base = lerLongo(campoBase.getText(), 1);
-            saida.setText(Recorrencia.resolver(f, a, bc, p, q, base));
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Entrada invalida. Preencha os campos com numeros inteiros validos.", "Erro", JOptionPane.ERROR_MESSAGE);
+            boolean ehDivisiva = formaDivisivaSelecionada();
+            int forma = ehDivisiva ? Recorrencia.FORMA_DIVISIVA : Recorrencia.FORMA_SUBTRATIVA;
+            long quantidadeChamadas = converterNumero(campoQuantidadeChamadas.getText(), 1);
+            long fatorReducao = converterNumero(campoFatorReducao.getText(), ehDivisiva ? 2 : 1);
+            long coeficienteN = converterNumero(campoCoeficienteN.getText(), 0);
+            long grauN = converterNumero(campoGrauN.getText(), 1, Recorrencia.GRAU_MAXIMO);
+            long constanteCusto = converterNumero(campoConstanteCusto.getText(), 0);
+            long tamanhoCasoBase = converterNumero(campoTamanhoCasoBase.getText(), 1);
+            long valorCasoBase = converterNumero(campoValorCasoBase.getText(), 0);
+            long n = converterNumero(campoN.getText(), 1, Recorrencia.N_MAXIMO);
+            areaResultado.setText(Recorrencia.resolverRecorrencia(forma, quantidadeChamadas, fatorReducao, coeficienteN, grauN, constanteCusto,
+                    tamanhoCasoBase, valorCasoBase, n));
+            areaResultado.setCaretPosition(0);
+        } catch (NumberFormatException erro) {
+            JOptionPane.showMessageDialog(this, "Entrada invalida. Preencha os campos com numeros inteiros validos (d entre 1 e " + Recorrencia.GRAU_MAXIMO + ", n entre 1 e " + Recorrencia.N_MAXIMO + ").", "Erro", JOptionPane.ERROR_MESSAGE);
         }
     }
 
