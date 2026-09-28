@@ -1,7 +1,5 @@
 package att;
 
-import java.math.BigInteger;
-import java.util.Locale;
 import java.util.Scanner;
 
 public class Recorrencia {
@@ -10,19 +8,75 @@ public class Recorrencia {
     static final int FORMA_DIVISIVA = 2;
     static final long N_MAXIMO = 1000;
     static final long GRAU_MAXIMO = 10;
+    static final int TERMOS_DA_SERIE = 60;
+    static final double LOGARITMO_DE_DOIS = serieDoLogaritmo(1.0 / 3.0, 0);
+
+    static long multiplicar(long x, long y) {
+        if (x != 0 && y > Long.MAX_VALUE / x) {
+            throw new ArithmeticException("estouro");
+        }
+        return x * y;
+    }
+
+    static long somar(long x, long y) {
+        if (y > Long.MAX_VALUE - x) {
+            throw new ArithmeticException("estouro");
+        }
+        return x + y;
+    }
 
     static long potencia(long base, long expoente) {
         if (expoente == 0) {
             return 1;
         }
-        return base * potencia(base, expoente - 1);
+        return multiplicar(base, potencia(base, expoente - 1));
+    }
+
+    static double potenciaReal(double base, int expoente) {
+        if (expoente == 0) {
+            return 1.0;
+        }
+        return base * potenciaReal(base, expoente - 1);
+    }
+
+    static double serieDoLogaritmo(double y, int termo) {
+        if (termo == TERMOS_DA_SERIE) {
+            return 0.0;
+        }
+        int expoenteImpar = 2 * termo + 1;
+        return 2.0 * potenciaReal(y, expoenteImpar) / expoenteImpar + serieDoLogaritmo(y, termo + 1);
+    }
+
+    static double logaritmoNatural(double x) {
+        if (x > 2.0) {
+            return logaritmoNatural(x / 2.0) + LOGARITMO_DE_DOIS;
+        }
+        return serieDoLogaritmo((x - 1.0) / (x + 1.0), 0);
+    }
+
+    static long logaritmoInteiro(long valor, long base) {
+        if (valor == 1) {
+            return 0;
+        }
+        if (valor % base != 0) {
+            return -1;
+        }
+        long restante = logaritmoInteiro(valor / base, base);
+        return (restante < 0) ? -1 : restante + 1;
+    }
+
+    static String duasCasasDecimais(double valor) {
+        long centesimos = (long) (valor * 100.0 + 0.5);
+        long parteInteira = centesimos / 100;
+        long parteDecimal = centesimos % 100;
+        return parteInteira + "." + (parteDecimal < 10 ? "0" : "") + parteDecimal;
     }
 
     static String potenciaDeN(long grau) {
         return (grau == 1) ? "n" : "n^" + grau;
     }
 
-    static BigInteger expandir(
+    static long expandir(
             StringBuilder texto,
             boolean ehDivisiva,
             long quantidadeChamadas,
@@ -33,24 +87,20 @@ public class Recorrencia {
             long tamanhoCasoBase,
             long valorCasoBase,
             long tamanhoAtual,
-            BigInteger multiplicador,
-            BigInteger custoAcumulado) {
+            long multiplicador,
+            long custoAcumulado) {
 
         if (tamanhoAtual <= tamanhoCasoBase) {
-            BigInteger resultado = multiplicador.multiply(BigInteger.valueOf(valorCasoBase)).add(custoAcumulado);
+            long resultado = somar(multiplicar(multiplicador, valorCasoBase), custoAcumulado);
             texto.append("  = ").append(multiplicador).append(" x ").append(valorCasoBase).append(" + ").append(custoAcumulado)
                 .append(" = ").append(resultado).append("   (caso base: T(").append(tamanhoAtual).append(") = ").append(valorCasoBase).append(")\n");
             return resultado;
         }
 
         long tamanhoSubproblema = ehDivisiva ? tamanhoAtual / fatorReducao : tamanhoAtual - fatorReducao;
-
-        BigInteger custoDoNivel = BigInteger.valueOf(tamanhoAtual).pow((int) grauN)
-                .multiply(BigInteger.valueOf(coeficienteN))
-                .add(BigInteger.valueOf(constanteCusto));
-
-        BigInteger novoCusto = custoAcumulado.add(multiplicador.multiply(custoDoNivel));
-        BigInteger novoMultiplicador = multiplicador.multiply(BigInteger.valueOf(quantidadeChamadas));
+        long custoDoNivel = somar(multiplicar(coeficienteN, potencia(tamanhoAtual, grauN)), constanteCusto);
+        long novoCusto = somar(custoAcumulado, multiplicar(multiplicador, custoDoNivel));
+        long novoMultiplicador = multiplicar(multiplicador, quantidadeChamadas);
 
         texto.append("  = ").append(novoMultiplicador).append(" x T(").append(tamanhoSubproblema).append(") + ").append(novoCusto).append("\n");
 
@@ -58,21 +108,28 @@ public class Recorrencia {
                 tamanhoCasoBase, valorCasoBase, tamanhoSubproblema, novoMultiplicador, novoCusto);
     }
 
+    static boolean chamadasMenoresQuePotencia(long quantidadeChamadas, long divisor, long grau) {
+        try {
+            return quantidadeChamadas < potencia(divisor, grau);
+        } catch (ArithmeticException estouro) {
+            return true;
+        }
+    }
+
     static String complexidadeDivisiva(long quantidadeChamadas, long divisor, long coeficienteN, long grauN) {
         long grauDoCusto = (coeficienteN != 0) ? grauN : 0;
-        long divisorElevadoAoGrau = potencia(divisor, grauDoCusto);
-        if (quantidadeChamadas == divisorElevadoAoGrau) {
+        if (chamadasMenoresQuePotencia(quantidadeChamadas, divisor, grauDoCusto)) {
+            return (grauDoCusto == 0) ? "O(1)" : "O(" + potenciaDeN(grauDoCusto) + ")";
+        }
+        if (quantidadeChamadas == potencia(divisor, grauDoCusto)) {
             return (grauDoCusto == 0) ? "O(log n)" : "O(" + potenciaDeN(grauDoCusto) + " log n)";
         }
-        if (quantidadeChamadas < divisorElevadoAoGrau) {
-            return "O(" + potenciaDeN(grauDoCusto) + ")";
+        long expoenteExato = logaritmoInteiro(quantidadeChamadas, divisor);
+        if (expoenteExato >= 0) {
+            return "O(" + potenciaDeN(expoenteExato) + ")";
         }
-        double expoente = Math.log(quantidadeChamadas) / Math.log(divisor);
-        long expoenteArredondado = Math.round(expoente);
-        if (Math.abs(expoente - expoenteArredondado) < 1e-9) {
-            return "O(n^" + expoenteArredondado + ")";
-        }
-        return "O(n^" + String.format(Locale.US, "%.2f", expoente) + ")";
+        double expoente = logaritmoNatural(quantidadeChamadas) / logaritmoNatural(divisor);
+        return "O(n^" + duasCasasDecimais(expoente) + ")   (expoente = log base " + divisor + " de " + quantidadeChamadas + ")";
     }
 
     static String complexidadeSubtrativa(long quantidadeChamadas, long reducao, long coeficienteN, long grauN) {
@@ -104,9 +161,14 @@ public class Recorrencia {
 
         texto.append("Expansao (metodo da substituicao):\n");
         texto.append("T(").append(n).append(")\n");
-        BigInteger resultado = expandir(texto, ehDivisiva, quantidadeChamadas, fatorReducao, coeficienteN, grauN, constanteCusto,
-                tamanhoCasoBase, valorCasoBase, n, BigInteger.ONE, BigInteger.ZERO);
-        texto.append("\nResultado: T(").append(n).append(") = ").append(resultado).append("\n\n");
+        try {
+            long resultado = expandir(texto, ehDivisiva, quantidadeChamadas, fatorReducao, coeficienteN, grauN, constanteCusto,
+                    tamanhoCasoBase, valorCasoBase, n, 1, 0);
+            texto.append("\nResultado: T(").append(n).append(") = ").append(resultado).append("\n\n");
+        } catch (ArithmeticException estouro) {
+            texto.append("\nO valor de T(").append(n).append(") passou do maior numero suportado (").append(Long.MAX_VALUE)
+                .append("). Tente um n menor.\n\n");
+        }
 
         texto.append("Forma geral apos k expansoes:\n");
         if (ehDivisiva) {
